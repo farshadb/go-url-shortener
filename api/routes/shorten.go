@@ -91,11 +91,29 @@ func ShortenURL(c *fiber.Ctx) error {
 
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "error saving to database", 
-			})
+				"error": "error saving to server", 
+			})		
 		}
 
-		r2.Decer(database.Ctx, c.IP())
+		resp := response{
+			URL:			body.URL,
+			CustomShort: 	"",
+			Expiry: 		body.Expiry,
+			XRateRemaning:	10,
+			XRateLimitReset:30,
+
+		
 	}
+
+	val, _ := r2.Get(database.Ctx, id).Result()
+	r2.Decer(database.Ctx, c.IP())
+	resp.RateRemaining , _ := strconv.Atoi(val)
+
+	ttl, _ := r2.TTL(database.Ctx, c.IP()).Result()
+	resp.XRateLimitReset = ttl / time.Nanosecond / time.Minute
+
+	resp.CustomShort = os.Getenv("DOMAIN") + "/" + id
+
+	return c.Status(Fiber.StatusOK).JSON(resp)
 
 }
